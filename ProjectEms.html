@@ -1,100 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>EMS Ultimate Dashboard</title>
+  <title>EMS Ultimate 2.0</title>
+  <link rel="stylesheet" href="ProjectEms.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      font-family: Arial;
-      background: #020617;
-      color: white;
-    }
-
-    /* sidebar */
-    .sidebar {
-      width: 200px;
-      background: #0f172a;
-      padding: 20px;
-      height: 100vh;
-    }
-
-    .sidebar h2 {
-      color: cyan;
-    }
-
-    .sidebar li {
-      margin: 15px 0;
-      list-style: none;
-      cursor: pointer;
-    }
-
-    .sidebar li:hover {
-      color: cyan;
-    }
-
-    /* main */
-    .main {
-      flex: 1;
-      padding: 20px;
-    }
-
-    h1 {
-      color: cyan;
-    }
-
-    /* KPI */
-    .top-cards {
-      display: flex;
-      gap: 20px;
-    }
-
-    .kpi {
-      background: #111827;
-      padding: 15px;
-      flex: 1;
-      text-align: center;
-      border-radius: 10px;
-      box-shadow: 0 0 15px cyan;
-    }
-
-    /* charts */
-    .charts {
-      display: flex;
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    canvas {
-      width: 280px !important;
-      height: 280px !important;
-    }
-
-    /* bottom circles */
-    .bottom {
-      display: flex;
-      gap: 20px;
-      margin-top: 30px;
-    }
-
-    .circle {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 20px cyan;
-      text-align: center;
-    }
-
-    .circle:hover {
-      transform: scale(1.1);
-    }
-  </style>
 </head>
 
 <body>
@@ -115,9 +24,9 @@
 <h1>Energy Analytics Dashboard</h1>
 
 <div class="top-cards">
-  <div class="kpi">⚡ <span id="totalEnergy">0</span></div>
-  <div class="kpi">🔥 Efficiency: 78%</div>
-  <div class="kpi">💡 Load: 72%</div>
+  <div class="kpi">⚡ <span id="totalEnergy"></span></div>
+  <div class="kpi">🔥 Efficiency: 92%</div>
+  <div class="kpi">💡 Load: 78%</div>
 </div>
 
 <div class="charts">
@@ -126,119 +35,15 @@
 </div>
 
 <div class="bottom">
-  <div class="circle">Kiln</div>
-  <div class="circle">Cement</div>
-  <div class="circle">Coal</div>
-  <div class="circle">Packing</div>
+  <div class="circle">Kiln<br>32%</div>
+  <div class="circle">Cement<br>29%</div>
+  <div class="circle">Coal<br>8%</div>
+  <div class="circle">Packing<br>6%</div>
 </div>
 
 </div>
 
-<script>
-const sections = {
-  "Kiln 1": { total:289227, compressors:{"800.50":115259,"800.53":20032,"800.51":153935}},
-  "Kiln 2": { total:84984, compressors:{"800.13":7022,"800.12":31552,"800.10":35981}},
-  "Kiln 3": { total:125242, compressors:{"B-09":123407,"B-12":1621,"B-05":213}},
-  "Coal Mill": { total:73345, compressors:{"800.52":36638,"B-03":36707}},
-  "Cement": { total:265643, compressors:{"800.08":58534,"800.07":119207,"800.10":87900}},
-  "Packing": { total:59876, compressors:{"B-10":53542,"B-11":1193,"644.02":5141}}
-};
-
-const colors = ["#00E5FF","#2979FF","#651FFF","#00E676","#FF9100","#FF1744"];
-
-// total energy
-const totalEnergy = Object.values(sections)
-  .reduce((a,b)=>a+b.total,0);
-
-// animation number
-function animateValue(id,start,end,duration){
-  let obj=document.getElementById(id);
-  let startTime=null;
-
-  function step(t){
-    if(!startTime) startTime=t;
-    let progress=Math.min((t-startTime)/duration,1);
-    obj.innerText=Math.floor(progress*(end-start)+start)+" kWh";
-    if(progress<1) requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
-}
-
-animateValue("totalEnergy",0,totalEnergy,1500);
-
-// main chart
-const labels = Object.keys(sections);
-const values = Object.values(sections).map(s=>s.total);
-
-let drillChart;
-
-new Chart(document.getElementById("mainChart"),{
-  type:"doughnut",
-  data:{labels:labels,datasets:[{data:values,backgroundColor:colors}]},
-  options:{
-    plugins:{
-      tooltip:{
-        callbacks:{
-          label:function(ctx){
-            let v=ctx.raw;
-            let p=((v/totalEnergy)*100).toFixed(1);
-            return `${ctx.label}: ${p}% (${v} kWh)`;
-          }
-        }
-      }
-    },
-    onClick:(e,el)=>{
-      if(el.length){
-        let i=el[0].index;
-        showDrill(labels[i]);
-      }
-    }
-  }
-});
-
-// drill chart
-function showDrill(section){
-  let comp=sections[section].compressors;
-  let total=sections[section].total;
-
-  if(drillChart) drillChart.destroy();
-
-  drillChart=new Chart(document.getElementById("drillChart"),{
-    type:"pie",
-    data:{labels:Object.keys(comp),
-      datasets:[{data:Object.values(comp),backgroundColor:colors}]},
-    options:{
-      plugins:{
-        tooltip:{
-          callbacks:{
-            label:function(ctx){
-              let v=ctx.raw;
-              let p=((v/total)*100).toFixed(1);
-              return `${ctx.label}: ${p}% (${v} kWh)`;
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
-// bottom circle %
-const map={
-  "Kiln":["Kiln 1","Kiln 2","Kiln 3"],
-  "Cement":["Cement"],
-  "Coal":["Coal Mill"],
-  "Packing":["Packing"]
-};
-
-document.querySelectorAll(".circle").forEach(c=>{
-  let name=c.innerText;
-  let sum=map[name].reduce((a,s)=>a+sections[s].total,0);
-  let p=((sum/totalEnergy)*100).toFixed(1);
-  c.innerHTML=`${name}<br>${p}%`;
-});
-</script>
+<script src="ProjectEms.js"></script>
 
 </body>
 </html>
